@@ -1,0 +1,30 @@
+import {
+  LucideProps,
+  Loader2,
+  Github,
+  Google,
+  LineChart,
+  Building2,
+  Rocket,
+  Bell,
+  Search,
+  Home,
+  User,
+  Settings,
+  LogOut,
+} from "lucide-react";
+
+export const Icons = {
+  spinner: Loader2,
+  github: Github,
+  google: Google,
+  chart: LineChart,
+  building: Building2,
+  rocket: Rocket,
+  bell: Bell,
+  search: Search,
+  home: Home,
+  user: User,
+  settings: Settings,
+  logout: LogOut,
+};

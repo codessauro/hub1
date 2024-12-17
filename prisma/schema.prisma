@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                    String         @id @default(cuid())
+  name                  String?
+  email                 String?        @unique
+  emailVerified         DateTime?
+  image                 String?
+  role                  UserRole       @default(INVESTOR)
+  kycStatus             KYCStatus      @default(PENDING)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  accounts              Account[]
+  sessions              Session[]
+  investments           Investment[]
+  createdProjects       Project[]      @relation("ProjectCreator")
+  verificationDocuments Verification[]
+}
+
+model Verification {
+  id        String           @id @default(cuid())
+  type      DocumentType
+  status    VerificationStatus @default(PENDING)
+  url       String
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Project {
+  id            String        @id @default(cuid())
+  title         String
+  description   String        @db.Text
+  category      Category
+  targetAmount  Float
+  currentAmount Float         @default(0)
+  deadline      DateTime
+  status        ProjectStatus @default(PENDING)
+  creatorId     String
+  creator       User          @relation("ProjectCreator", fields: [creatorId], references: [id])
+  investments   Investment[]
+  updates       Update[]
+  mediaAssets   Media[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Investment {
+  id          String           @id @default(cuid())
+  amount      Float
+  status      InvestmentStatus @default(PENDING)
+  projectId   String
+  project     Project          @relation(fields: [projectId], references: [id])
+  investorId  String
+  investor    User             @relation(fields: [investorId], references: [id])
+  transaction Transaction?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Transaction {
+  id           String            @id @default(cuid())
+  amount       Float
+  status       TransactionStatus @default(PENDING)
+  type         TransactionType
+  investmentId String            @unique
+  investment   Investment        @relation(fields: [investmentId], references: [id])
+  stripeId     String?          @unique
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model Update {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  url       String
+  type      MediaType
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  INVESTOR
+  PROJECT_CREATOR
+}
+
+enum KYCStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DocumentType {
+  ID_CARD
+  PASSPORT
+  DRIVERS_LICENSE
+  PROOF_OF_ADDRESS
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ProjectStatus {
+  PENDING
+  ACTIVE
+  FUNDED
+  CLOSED
+  CANCELLED
+}
+
+enum Category {
+  TECHNOLOGY
+  REAL_ESTATE
+  RENEWABLE_ENERGY
+  HEALTHCARE
+  EDUCATION
+  AGRICULTURE
+  ENTERTAINMENT
+  OTHER
+}
+
+enum InvestmentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum TransactionType {
+  INVESTMENT
+  WITHDRAWAL
+  REFUND
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
